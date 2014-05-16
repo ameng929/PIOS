@@ -28,13 +28,23 @@ static struct pseudodesc idt_pd = {
 	sizeof(idt) - 1, (uint32_t) idt
 };
 
+extern int vectors[];
+
 
 static void
 trap_init_idt(void)
 {
 	extern segdesc gdt[];
-	
-	panic("trap_init() not implemented.");
+
+	//panic("trap_init() not implemented.");
+
+	int i;
+	for (i=0; i<256; i++) {
+		SETGATE(idt[i], 0, CPU_GDT_KCODE, vectors[i], 0); //CPU_GDT_KCODE is 0x08
+	}
+	SETGATE(idt[3], 0, CPU_GDT_KCODE, vectors[3], 3); //T_BRKPT
+	SETGATE(idt[4], 0, CPU_GDT_KCODE, vectors[4], 3); //T_OFLOW
+
 }
 
 void
@@ -80,6 +90,10 @@ const char *trap_name(int trapno)
 
 	if (trapno < sizeof(excnames)/sizeof(excnames[0]))
 		return excnames[trapno];
+	if (trapno == T_SYSCALL)
+		return "System call";
+	if (trapno >= T_IRQ0 && trapno < T_IRQ0 + 16)
+		return "Hardware Interrupt";
 	return "(unknown trap)";
 }
 
