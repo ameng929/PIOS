@@ -79,8 +79,8 @@ mem_init(void)
 	//     Hint: the linker places the kernel (see start and end above),
 	//     but YOU decide where to place the pageinfo array.
 	// Change the code to reflect this.
-	pageinfo *mem_pageinfo;
-	memset(mem_pageinfo, 0, sizeof(pageinfo)*mem_npage);
+	//pageinfo *mem_pageinfo;
+	//memset(mem_pageinfo, 0, sizeof(pageinfo)*mem_npage);
 
 	pageinfo **freetail = &mem_freelist;
 	int i;
