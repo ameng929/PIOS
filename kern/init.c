@@ -57,6 +57,20 @@ init(void)
 	// Can't call cprintf until after we do this!
 	cons_init();
 
+<<<<<<< HEAD
+=======
+	// Lab 1: test cprintf and debug_trace
+	int x = 1, y = 3, z = 4;
+	cprintf("x's address is %x", &x);
+    cprintf("1234 decimal is %o octal!\n", 1234);
+    //cprintf("x %d, y %x, z %d\n", x, y, z);
+//  unsigned int i = 0x00646c72;
+//  cprintf("H%x Wo%s", 57616, &i);
+//  cprintf("x=%d y=%d", 3);
+
+	debug_check();
+
+>>>>>>> lab1
 	// Initialize and load the bootstrap CPU's GDT, TSS, and IDT.
 	cpu_init();
 	trap_init();
@@ -84,7 +98,19 @@ init(void)
 	// Lab 1: change this so it enters user() in user mode,
 	// running on the user_stack declared above,
 	// instead of just calling user() directly.
-	user();
+	static trapframe ttf = {
+		//gs : 0x00,
+		//fs : 0x00,
+		es : CPU_GDT_UDATA|3,
+		ds : CPU_GDT_UDATA|3,
+		cs : CPU_GDT_UCODE|3,
+		ss : CPU_GDT_UDATA|3,
+		eflags : FL_IOPL_3, //make the processor believe the tf be created in usermode
+		eip : (uint32_t)user,
+		esp : (uint32_t)&user_stack[PAGESIZE],
+	};
+	trap_return(&ttf);
+	//user();
 }
 
 // This is the first function that gets run in user mode (ring 3).

@@ -1,3 +1,4 @@
+
 /*
  * CPU setup and management of key protected-mode data structures,
  * such as global descriptor table (GDT) and task state segment (TSS).
@@ -40,6 +41,11 @@ cpu cpu_boot = {
 		// 0x10 - kernel data segment
 		[CPU_GDT_KDATA >> 3] = SEGDESC32(1, STA_W, 0x0,
 					0xffffffff, 0),
+		// 0x18 - user code segment
+		[CPU_GDT_UCODE >> 3] = SEGDESC32(1, STA_X | STA_R, 0x00000000, 0xffffffff, 3),
+
+		// 0x20 - user data segment
+		[CPU_GDT_UDATA >> 3] = SEGDESC32(1, STA_W, 0x00000000, 0xffffffff, 3),
 	},
 
 	magic: CPU_MAGIC
@@ -49,6 +55,10 @@ cpu cpu_boot = {
 void cpu_init()
 {
 	cpu *c = cpu_cur();
+
+	c->gdt[CPU_GDT_TSS >> 3] = SEGDESC16(0, STS_T32A, (uint32_t)(&c->tss), sizeof(c->tss)-1, 0);
+	c->tss.ts_esp0 = (uint32_t)c->kstackhi;
+	c->tss.ts_ss0 = CPU_GDT_KDATA;
 
 	// Load the GDT
 	struct pseudodesc gdt_pd = {
@@ -65,6 +75,8 @@ void cpu_init()
 
 	// We don't need an LDT.
 	asm volatile("lldt %%ax" :: "a" (0));
+
+	ltr(CPU_GDT_TSS);
 }
 
 // Allocate an additional cpu struct representing a non-bootstrap processor.
