@@ -24,6 +24,8 @@ proc *proc_root;	// root process, once it's created in init()
 
 // LAB 2: insert your scheduling data structure declarations here.
 
+proc *proc_queue_head;
+spinlock _queue_lock;
 
 void
 proc_init(void)
@@ -32,6 +34,8 @@ proc_init(void)
 		return;
 
 	// your module initialization code here
+	spinlock_init(&_queue_lock);
+	proc_queue_head = NULL;	
 }
 
 // Allocate and initialize a new proc as child 'cn' of parent 'p'.
@@ -66,7 +70,21 @@ proc_alloc(proc *p, uint32_t cn)
 void
 proc_ready(proc *p)
 {
-	panic("proc_ready not implemented");
+	//panic("proc_ready not implemented");
+	spinlock_acquire(&_queue_lock);
+	p->state = PROC_READY;
+	p->readynext = NULL;
+	proc *tmp = proc_queue_head;
+	if(!tmp){//the ready queue is empty
+		proc_queue_head = p;
+		spinlock_release(&_queue_lock);
+		return ;
+	}
+	while(tmp->readynext)
+		tmp = tmp->readynext;//get the ready proc at the ready queue taill
+
+	tmp->readynext = p;
+	spinlock_release(&_queue_lock);
 }
 
 // Save the current process's state before switching to another process.
@@ -79,6 +97,11 @@ proc_ready(proc *p)
 void
 proc_save(proc *p, trapframe *tf, int entry)
 {
+	p->sv.tf = *tf;
+	if(entry == 0)
+		p->sv.tf.eip -= 2;
+	//rollback the syscall, 
+	//because the syscall pushes eip of the next instruction
 }
 
 // Go to sleep waiting for a given child process to finish running.
@@ -87,20 +110,49 @@ proc_save(proc *p, trapframe *tf, int entry)
 void gcc_noreturn
 proc_wait(proc *p, proc *cp, trapframe *tf)
 {
-	panic("proc_wait not implemented");
+	//panic("proc_wait not implemented");
+	p->state =	PROC_WAIT;
+	p->runcpu = NULL;
+	p->waitchild = cp;
+	proc_save(p, tf, 0);
+	spinlock_release(&p->lock);
+	proc_sched();
 }
 
 void gcc_noreturn
 proc_sched(void)
 {
-	panic("proc_sched not implemented");
+	//panic("proc_sched not implemented");
+	spinlock_acquire(&_queue_lock);
+	while(!proc_queue_head){
+		spinlock_release(&_queue_lock);
+		while(!proc_queue_head){
+			sti();
+			pause();
+			cli();
+		}
+		spinlock_acquire(&_queue_lock);
+	}
+
+	proc *p = proc_queue_head;
+	proc_queue_head = p->readynext;
+	spinlock_acquire(&p->lock);
+	spinlock_release(&_queue_lock);
+	proc_run(p);
 }
 
 // Switch to and run a specified process, which must already be locked.
 void gcc_noreturn
 proc_run(proc *p)
 {
-	panic("proc_run not implemented");
+	//panic("proc_run not implemented");
+  	p->state = PROC_RUN;
+  	cpu *curr = cpu_cur();
+  	curr->proc = p;
+  	p->runcpu = curr;
+  	spinlock_release(&p->lock);
+	//lcr3(mem_phys(p->pdir));
+  	trap_return(&p->sv.tf);
 }
 
 // Yield the current CPU to another ready process.
@@ -108,7 +160,11 @@ proc_run(proc *p)
 void gcc_noreturn
 proc_yield(trapframe *tf)
 {
-	panic("proc_yield not implemented");
+	//panic("proc_yield not implemented");
+	proc *curr = proc_cur();
+  	proc_save(curr, tf, -1);
+  	proc_ready(curr);
+  	proc_sched();
 }
 
 // Put the current process to sleep by "returning" to its parent process.
@@ -118,7 +174,30 @@ proc_yield(trapframe *tf)
 void gcc_noreturn
 proc_ret(trapframe *tf, int entry)
 {
-	panic("proc_ret not implemented");
+	//panic("proc_ret not implemented");
+	proc *cp = proc_cur();
+  	proc *pp = cp->parent;
+  	// Root process incurs trap...
+  	if(pp == NULL) {
+    	if(tf->trapno != T_SYSCALL) {
+      		trap_print(tf);
+      		//panic("proc_ret: trap in root process\n");
+    	}
+    	done();
+  	}
+  	spinlock_acquire(&cp->lock);
+  	cp->state = PROC_STOP;
+  	proc_save(cp, tf, entry);
+  	spinlock_release(&cp->lock);
+  	spinlock_acquire(&pp->lock);
+
+  	if(pp->waitchild == cp) {
+    	pp->waitchild = NULL;
+    	proc_run(pp);
+ 	}
+  	spinlock_release(&pp->lock);
+  	// On to the next one
+  	proc_sched();
 }
 
 // Helper functions for proc_check()

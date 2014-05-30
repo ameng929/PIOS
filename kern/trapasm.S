@@ -100,6 +100,8 @@ TRAPHANDLER_NOEC(vector16,16)		// floating point error
 TRAPHANDLER(vector17,17)		// alignment check
 TRAPHANDLER_NOEC(vector18,18)		// machine check
 TRAPHANDLER_NOEC(vector19,19)		// SIMD floating point error
+TRAPHANDLER(vector30,30)		// 
+TRAPHANDLER_NOEC(vector48,48)
 
 /*
  * Lab 1: Your code here for _alltraps
@@ -175,3 +177,5 @@ vectors:
 	.long vector17
 	.long vector18
 	.long vector19
+	.long vector30
+	.long vector48

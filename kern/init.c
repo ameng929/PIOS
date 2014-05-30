@@ -57,20 +57,6 @@ init(void)
 	// Can't call cprintf until after we do this!
 	cons_init();
 
-<<<<<<< HEAD
-=======
-	// Lab 1: test cprintf and debug_trace
-	int x = 1, y = 3, z = 4;
-	cprintf("x's address is %x", &x);
-    cprintf("1234 decimal is %o octal!\n", 1234);
-    //cprintf("x %d, y %x, z %d\n", x, y, z);
-//  unsigned int i = 0x00646c72;
-//  cprintf("H%x Wo%s", 57616, &i);
-//  cprintf("x=%d y=%d", 3);
-
-	debug_check();
-
->>>>>>> lab1
 	// Initialize and load the bootstrap CPU's GDT, TSS, and IDT.
 	cpu_init();
 	trap_init();
@@ -89,28 +75,57 @@ init(void)
 	ioapic_init();		// prepare to handle external device interrupts
 	lapic_init();		// setup this CPU's local APIC
 	cpu_bootothers();	// Get other processors started
-//	cprintf("CPU %d (%s) has booted\n", cpu_cur()->id,
-//		cpu_onboot() ? "BP" : "AP");
+	cprintf("CPU %d (%s) has booted\n", cpu_cur()->id, cpu_onboot() ? "BP" : "AP");
 
 	// Initialize the process management code.
 	proc_init();
 
+	//if(!cpu_onboot())
+	//	proc_sched();
+
+	proc *user_proc;
+
+	if(cpu_onboot()) {
+
+		user_proc = proc_alloc(NULL,0);
+		user_proc->sv.tf.esp = (uint32_t)&user_stack[PAGESIZE];
+		user_proc->sv.tf.eip =  (uint32_t)user;
+		user_proc->sv.tf.eflags = FL_IF;
+		user_proc->sv.tf.gs = CPU_GDT_UDATA | 3;
+		user_proc->sv.tf.fs = CPU_GDT_UDATA | 3;
+		user_proc->sv.tf.es = CPU_GDT_UDATA | 3;
+		user_proc->sv.tf.ds = CPU_GDT_UDATA | 3;
+		user_proc->sv.tf.cs = CPU_GDT_UCODE | 3;
+		user_proc->sv.tf.ss = CPU_GDT_UDATA | 3;
+		proc_ready(user_proc);
+	}
+	proc_sched();
+	user();
+
+	// proc *root = proc_alloc(NULL, 0);
+	// root->sv.tf.eip = (uint32_t)user;
+	// root->sv.tf.esp = (uint32_t)&user_stack[PAGESIZE];
+	// proc_ready(root);
+	// proc_sched();
 	// Lab 1: change this so it enters user() in user mode,
 	// running on the user_stack declared above,
 	// instead of just calling user() directly.
-	static trapframe ttf = {
-		//gs : 0x00,
-		//fs : 0x00,
-		es : CPU_GDT_UDATA|3,
-		ds : CPU_GDT_UDATA|3,
-		cs : CPU_GDT_UCODE|3,
-		ss : CPU_GDT_UDATA|3,
-		eflags : FL_IOPL_3, //make the processor believe the tf be created in usermode
-		eip : (uint32_t)user,
-		esp : (uint32_t)&user_stack[PAGESIZE],
-	};
-	trap_return(&ttf);
+	// static trapframe ttf = {
+	// 	//gs : 0x00,
+	// 	//fs : 0x00,
+	// 	gs : CPU_GDT_UDATA|3,
+	// 	fs : CPU_GDT_UDATA|3,
+	// 	es : CPU_GDT_UDATA|3,
+	// 	ds : CPU_GDT_UDATA|3,
+	// 	cs : CPU_GDT_UCODE|3,
+	// 	ss : CPU_GDT_UDATA|3,
+	// 	eflags : FL_IOPL_3, //make the processor believe the tf be created in usermode
+	// 	eip : (uint32_t)user,
+	// 	esp : (uint32_t)&user_stack[PAGESIZE],
+	// };
+	// trap_return(&ttf);
 	//user();
+
 }
 
 // This is the first function that gets run in user mode (ring 3).

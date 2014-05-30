@@ -29,6 +29,9 @@ pageinfo *mem_freelist;		// Start of free page list
 
 pageinfo tmp_mem_pageinfo[1024*1024*1024/PAGESIZE];
 
+spinlock _freelist_lock;
+spinlock mem_freelock;
+
 void mem_check(void);
 
 void
@@ -145,11 +148,13 @@ mem_alloc(void)
 	// Fill this function in
 	// Fill this function in.
 	//panic("mem_alloc not implemented.");
-	if(mem_freelist == NULL)
-		return NULL;
-	pageinfo *result = mem_freelist;
-	mem_freelist = mem_freelist->free_next;
-	return result;
+	if(!spinlock_holding(&_freelist_lock));
+	spinlock_acquire(&_freelist_lock);
+	pageinfo *p = mem_freelist;
+	if(p != NULL)
+		mem_freelist = p->free_next;
+	spinlock_release(&_freelist_lock);
+	return p;
 }
 
 //
@@ -161,9 +166,11 @@ mem_free(pageinfo *pi)
 {
 	// Fill this function in.
 	//panic("mem_free not implemented.");
-	assert(pi->refcount == 0);
+	spinlock_acquire(&_freelist_lock);
+	//assert(pi->refcount == 0);
 	pi->free_next = mem_freelist;
 	mem_freelist = pi;
+	spinlock_release(&_freelist_lock);
 }
 
 //

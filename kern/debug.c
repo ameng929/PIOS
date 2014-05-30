@@ -77,10 +77,10 @@ debug_trace(uint32_t ebp, uint32_t eips[DEBUG_TRACEFRAMES])
 
   	//cprintf("Stack backtrace:\n");
   	for (i = 0; i < DEBUG_TRACEFRAMES && trace; i++) {
-    		cprintf("ebp %08x  ", trace[0]);
-    		cprintf("eip %08x  ", trace[1]);
-    		cprintf("args %08x %08x %08x %08x %08x ", trace[2], trace[3], trace[4], trace[5], trace[6]);
-    		cprintf("\n"); 
+    		//cprintf("ebp %08x  ", trace[0]);
+    		//cprintf("eip %08x  ", trace[1]);
+    		//cprintf("args %08x %08x %08x %08x %08x ", trace[2], trace[3], trace[4], trace[5], trace[6]);
+    		//cprintf("\n"); 
 		//save eips
     		eips[i] = trace[1];
 

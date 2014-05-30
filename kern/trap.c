@@ -143,7 +143,50 @@ trap(trapframe *tf)
 		c->recover(tf, c->recoverdata);
 
 	// Lab 2: your trap handling code here!
-
+	switch (tf->trapno) {
+  		case T_SYSCALL:
+    		assert(tf->cs & 3);
+    		syscall(tf);
+    		break;
+	  	case T_DIVIDE:
+	  	case T_DEBUG:
+	  	case T_BRKPT:
+	  	case T_OFLOW:
+	  	case T_NMI:
+	  	case T_BOUND:
+	  	case T_ILLOP:
+	  	case T_DEVICE:
+	  	case T_DBLFLT:
+	  	case T_TSS:
+	  	case T_SEGNP:
+	  	case T_STACK:
+	  	case T_GPFLT:
+	  	case T_PGFLT:
+	  	case T_FPERR:
+	  	case T_ALIGN:
+	  	case T_MCHK:
+	  	case T_SIMD:
+	  	case T_SECEV:
+	  		cprintf("the trapno is %x",tf->trapno);
+	    	assert(tf->cs & 3);
+	    	proc_ret(tf, 1);
+	    	break;
+	  	case T_LTIMER:
+	    	lapic_eoi();
+	    	if (tf->cs & 3)
+	      	proc_yield(tf);
+		    trap_return(tf);
+	    	break;
+	  	case T_LERROR:
+	    	lapic_errintr();
+	    	trap_return(tf);
+	  	case T_IRQ0 + IRQ_SPURIOUS:
+	    	cprintf("cpu%d: spurious interrupt at %x:%x\n",
+	        c->id, tf->cs, tf->eip);
+	    	trap_return(tf); // Note: no EOI (see Local APIC manual)
+	    	break;
+	}    	
+	
 	// If we panic while holding the console lock,
 	// release it so we don't get into a recursive panic that way.
 	if (spinlock_holding(&cons_lock))
