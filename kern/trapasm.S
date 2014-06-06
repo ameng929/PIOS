@@ -19,6 +19,8 @@
  * a trap.  It pushes a trap number onto the stack, then jumps to _alltraps.
  * Use TRAPHANDLER for traps where the CPU automatically pushes an error code.
  */ 
+ // hong:
+ // in TRAPHANDLER , CPU automatically pushes an error code
 #define TRAPHANDLER(name, num)						\
 	.globl name;		/* define global symbol for 'name' */	\
 	.type name, @function;	/* symbol type is function */		\
@@ -27,10 +29,12 @@
 	pushl $(num);							\
 	jmp _alltraps
 
-/* Use TRAPHANDLER_NOEC for traps where the CPU doesn't push an error code.
+/* Use TRAPHANDLER_NOEC for traps where the CPU does not push an error code.
  * It pushes a 0 in place of the error code, so the trap frame has the same
  * format in either case.
  */
+ // hong:
+ // pushe a 0 in place of the error for the same format
 #define TRAPHANDLER_NOEC(name, num)					\
 	.globl name;							\
 	.type name, @function;						\
@@ -45,41 +49,6 @@
 /*
  * Lab 1: Your code here for generating entry points for the different traps.
  */
-//TRAPHANDLER_NOEC(trap_divide, T_DIVIDE)
-//TRAPHANDLER_NOEC(trap_debug,  T_DEBUG)
-//TRAPHANDLER_NOEC(trap_nmi,    T_NMI)
-//TRAPHANDLER_NOEC(trap_brkpt,  T_BRKPT)
-//TRAPHANDLER_NOEC(trap_oflow,  T_OFLOW)
-//TRAPHANDLER_NOEC(trap_bound,  T_BOUND)
-//TRAPHANDLER_NOEC(trap_illop,  T_ILLOP)
-//TRAPHANDLER_NOEC(trap_device, T_DEVICE)
-//TRAPHANDLER_NOEC(trap_dblflt, T_DBLFLT)
-
-//TRAPHANDLER	(trap_tss,    T_TSS)
-//TRAPHANDLER	(trap_segnp,  T_SEGNP)
-//TRAPHANDLER	(trap_stack,  T_STACK)
-//TRAPHANDLER	(trap_gpflt,  T_GPFLT)
-//TRAPHANDLER	(trap_pgflt,  T_PGFLT)
-
-//TRAPHANDLER_NOEC(trap_fperr,  T_FPERR)
-//TRAPHANDLER_NOEC(trap_align,  T_ALIGN)
-
-//TRAPHANDLER_NOEC(trap_mchk,   T_MCHK)
-//TRAPHANDLER_NOEC(trap_simd,   T_SIMD)
-//TRAPHANDLER	(trap_secev,  T_SECEV)
-
-//TRAPHANDLER_NOEC(trap_irq_timer,    T_IRQ0+0)
-//TRAPHANDLER_NOEC(trap_irq_kdb,      T_IRQ0+1)
-//TRAPHANDLER_NOEC(trap_irq_serial,   T_IRQ0+4)
-//TRAPHANDLER_NOEC(trap_irq_spurious, T_IRQ0+7)
-//TRAPHANDLER_NOEC(trap_irq_ide,      T_IRQ0+14)
-
-//TRAPHANDLER_NOEC(trap_syscall, T_SYSCALL)
-//TRAPHANDLER_NOEC(trap_ltimer,  T_LTIMER)
-//TRAPHANDLER_NOEC(trap_lerror,  T_LERROR)
-//TRAPHANDLER	(trap_default, T_DEFAULT)
-//TRAPHANDLER	(trap_icnt,    T_ICNT)
-
 TRAPHANDLER_NOEC(vector0,0)		// divide error
 TRAPHANDLER_NOEC(vector1,1)		// debug exception
 TRAPHANDLER_NOEC(vector2,2)		// non-maskable interrupt
@@ -100,8 +69,38 @@ TRAPHANDLER_NOEC(vector16,16)		// floating point error
 TRAPHANDLER(vector17,17)		// alignment check
 TRAPHANDLER_NOEC(vector18,18)		// machine check
 TRAPHANDLER_NOEC(vector19,19)		// SIMD floating point error
-TRAPHANDLER(vector30,30)		// 
+TRAPHANDLER_NOEC(vector20,20)
+TRAPHANDLER_NOEC(vector21,21)
+TRAPHANDLER_NOEC(vector22,22)
+TRAPHANDLER_NOEC(vector23,23)
+TRAPHANDLER_NOEC(vector24,24)
+TRAPHANDLER_NOEC(vector25,25)
+TRAPHANDLER_NOEC(vector26,26)
+TRAPHANDLER_NOEC(vector27,27)
+TRAPHANDLER_NOEC(vector28,28)
+TRAPHANDLER_NOEC(vector29,29)
+TRAPHANDLER(vector30,30)
+TRAPHANDLER_NOEC(vector31,31)
+TRAPHANDLER_NOEC(vector32,32)
+TRAPHANDLER_NOEC(vector33,33)
+TRAPHANDLER_NOEC(vector34,34)
+TRAPHANDLER_NOEC(vector35,35)
+TRAPHANDLER_NOEC(vector36,36)
+TRAPHANDLER_NOEC(vector37,37)
+TRAPHANDLER_NOEC(vector38,38)
+TRAPHANDLER_NOEC(vector39,39)
+TRAPHANDLER_NOEC(vector40,40)
+TRAPHANDLER_NOEC(vector41,41)
+TRAPHANDLER_NOEC(vector42,42)
+TRAPHANDLER_NOEC(vector43,43)
+TRAPHANDLER_NOEC(vector44,44)
+TRAPHANDLER_NOEC(vector45,45)
+TRAPHANDLER_NOEC(vector46,46)
+TRAPHANDLER_NOEC(vector47,47)
 TRAPHANDLER_NOEC(vector48,48)
+TRAPHANDLER_NOEC(vector49,49)
+TRAPHANDLER_NOEC(vector50,50)
+TRAPHANDLER_NOEC(vector51,51)
 
 /*
  * Lab 1: Your code here for _alltraps
@@ -124,7 +123,7 @@ _alltraps:
 
 	pushl %esp //oesp
 	call trap
-	//addl $4, %esp //calling convention
+	addl $4, %esp 
 
 //
 // Trap return code.
@@ -144,17 +143,17 @@ trap_return:
  * Lab 1: Your code here for trap_return
  */ //1: jmp 1b // just spin
 	movl 4(%esp), %esp
-	//this step has been done in _alltrap
-	//popl %esp
 	popal 
 	popl %gs
 	popl %fs
 	popl %es
 	popl %ds
 	addl $8, %esp
+	sti
 	iret
 
-.data
+	
+.data 
 .globl vectors
 vectors:
 	.long vector0
@@ -177,5 +176,35 @@ vectors:
 	.long vector17
 	.long vector18
 	.long vector19
+	.long vector20
+	.long vector21
+	.long vector22
+	.long vector23
+	.long vector24
+	.long vector25
+	.long vector26
+	.long vector27
+	.long vector28
+	.long vector29
 	.long vector30
+	.long vector31
+	.long vector32
+	.long vector33
+	.long vector34
+	.long vector35
+	.long vector36
+	.long vector37
+	.long vector38
+	.long vector39
+	.long vector40
+	.long vector41
+	.long vector42
+	.long vector43
+	.long vector44
+	.long vector45
+	.long vector46
+	.long vector47
 	.long vector48
+	.long vector49
+	.long vector50
+	.long vector51

@@ -73,40 +73,31 @@ init(void)
 	mp_init();		// Find info about processors in system
 	pic_init();		// setup the legacy PIC (mainly to disable it)
 	ioapic_init();		// prepare to handle external device interrupts
-	lapic_init();		// setup this CPU's local APIC
+	lapic_init();// setup this CPU's local APIC
+	proc_init();// set the method before bootothers
+	            // there is a situation that the cpu1 is fast than cpu0,
+	            // so that cpu0 will reinit the proc_ready_queue 
 	cpu_bootothers();	// Get other processors started
 	cprintf("CPU %d (%s) has booted\n", cpu_cur()->id, cpu_onboot() ? "BP" : "AP");
 
 	// Initialize the process management code.
-	proc_init();
-
-	//if(!cpu_onboot())
-	//	proc_sched();
-
-	proc *user_proc;
-
+	proc *root_proc;
 	if(cpu_onboot()) {
-
-		user_proc = proc_alloc(NULL,0);
-		user_proc->sv.tf.esp = (uint32_t)&user_stack[PAGESIZE];
-		user_proc->sv.tf.eip =  (uint32_t)user;
-		user_proc->sv.tf.eflags = FL_IF;
-		user_proc->sv.tf.gs = CPU_GDT_UDATA | 3;
-		user_proc->sv.tf.fs = CPU_GDT_UDATA | 3;
-		user_proc->sv.tf.es = CPU_GDT_UDATA | 3;
-		user_proc->sv.tf.ds = CPU_GDT_UDATA | 3;
-		user_proc->sv.tf.cs = CPU_GDT_UCODE | 3;
-		user_proc->sv.tf.ss = CPU_GDT_UDATA | 3;
-		proc_ready(user_proc);
+		root_proc = proc_alloc(NULL,0);
+		root_proc->sv.tf.esp = (uint32_t)&user_stack[PAGESIZE];
+		root_proc->sv.tf.eip =  (uint32_t)user;
+		root_proc->sv.tf.eflags = FL_IF;
+		root_proc->sv.tf.gs = CPU_GDT_UDATA | 3;
+		root_proc->sv.tf.fs = CPU_GDT_UDATA | 3;
+		root_proc->sv.tf.es = CPU_GDT_UDATA | 3;
+		root_proc->sv.tf.ds = CPU_GDT_UDATA | 3;
+		root_proc->sv.tf.cs = CPU_GDT_UCODE | 3;
+		root_proc->sv.tf.ss = CPU_GDT_UDATA | 3;
+		proc_ready(root_proc);
 	}
 	proc_sched();
 	user();
 
-	// proc *root = proc_alloc(NULL, 0);
-	// root->sv.tf.eip = (uint32_t)user;
-	// root->sv.tf.esp = (uint32_t)&user_stack[PAGESIZE];
-	// proc_ready(root);
-	// proc_sched();
 	// Lab 1: change this so it enters user() in user mode,
 	// running on the user_stack declared above,
 	// instead of just calling user() directly.
@@ -124,7 +115,7 @@ init(void)
 	// 	esp : (uint32_t)&user_stack[PAGESIZE],
 	// };
 	// trap_return(&ttf);
-	//user();
+	//		user();
 
 }
 

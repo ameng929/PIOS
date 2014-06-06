@@ -1,37 +1,222 @@
 trap_check_kernel() succeeded!
 start : 0x10000c, 0x10000c
-edata : 0x10b5de
-end : 0x311a2c, 0x311a2c
-&mem_pageinfo : 0x311364
-&mem_freelist : 0x1112c0
-&tmp_paginfo : 0x111360
+edata : 0x10965e
+end : 0x30faf0, 0x30faf0
+&mem_pageinfo : 0x30f3e4
+&mem_freelist : 0x10f340
+&tmp_paginfo : 0x10f3e0
 basemem : 0xa0000
 extmem : 0x3fff000
 kernel warning at kern/mem.c:60: Assuming we have 1GB of memory!
 Physical memory: 1048576K available, base = 640K, extended = 1047552K
-mem_check: 261515 free pages
-mem_check() succeeded!
 spinlock_check() succeeded!
-TRAP frame at 0x10afb4
-  edi  0x00000000
-  esi  0x00000000
-  ebp  0x0010c44c
-  ebx  0x0010c474
-  edx  0x0010c474
-  ecx  0x0000000a
+CPU 0 (BP) has booted
+in user()
+spawning child 0
+spawning child 1
+spawning child 2
+spawning child 3
+in child 0 count 0
+in child 0 count 1
+in child 1 count 0
+in child 1 count 1
+waiting for child 0
+in child 0 count 2
+in child 1 count 2
+in child 0 count 3
+in child 1 count 3
+in child 0 count 4
+in child 1 count 4
+in child 0 count 5
+in child 1 count 5
+in child 0 count 6
+in child 1 count 6
+in child 0 count 7
+in child 1 count 7
+in child 0 count 8
+in child 1 count 8
+in child 0 count 9
+in child 1 count 9
+waiting for child 1
+proc_check() 2-child test succeeded
+proc_check: spawning 4 children
+spawning child 0
+spawning child 1
+spawning child 2
+in child 0 count 0
+in child 0 count 1
+in child 1 count 0
+in child 1 count 1
+spawning child 3
+in child 2 count 0
+in child 2 count 1
+in child 3 count 0
+in child 3 count 1
+in child 0 count 2
+in child 1 count 2
+in child 2 count 2
+in child 3 count 2
+in child 0 count 3
+in child 1 count 3
+in child 2 count 3
+in child 3 count 3
+in child 0 count 4
+in child 1 count 4
+in child 2 count 4
+in child 3 count 4
+in child 0 count 5
+in child 1 count 5
+in child 2 count 5
+in child 3 count 5
+in child 0 count 6
+in child 1 count 6
+in child 2 count 6
+in child 3 count 6
+in child 0 count 7
+in child 1 count 7
+in child 2 count 7
+in child 3 count 7
+in child 0 count 8
+in child 1 count 8
+in child 2 count 8
+in child 3 count 8
+in child 0 count 9
+in child 1 count 9
+in child 2 count 9
+in child 3 count 9
+proc_check() 4-child test succeeded
+Unhandled interrupt occured on cpu 0: the trapno is 0!
+TRAP frame at 0x108fb4
+  edi  0x0008585a
+  esi  0x56438e00
+  ebp  0x0010c294
+  ebx  0x00083f3e
+  edx  0x0010c26c
+  ecx  0x0010f2d0
   eax  0x00000000
   es   0x----0023
   ds   0x----0023
-  trap 0x0000000d General Protection
-  err  0x00000182
-  eip  0x00100390
+  trap 0x00000000 Divide error
+  err  0x00000000
+  eip  0x00101cb2
   cs   0x----001b
-  flag 0x00003006
-  esp  0x0010c424
+  flag 0x00000202
+  esp  0x0010c24c
   ss   0x----0023
-kernel panic at kern/trap.c:152: unhandled trap
-  from 0010188d
-  from 00101cd5
-  from 001047a0
-  from 001047c6
-  from 00100130
+recover from trap 0
+Unhandled interrupt occured on cpu 0: the trapno is 3!
+TRAP frame at 0x108fb4
+  edi  0x0008585a
+  esi  0x56438e00
+  ebp  0x0010c294
+  ebx  0x00083f3e
+  edx  0x0010c26c
+  ecx  0x0010f2d0
+  eax  0xfeedface
+  es   0x----0023
+  ds   0x----0023
+  trap 0x00000003 Breakpoint
+  err  0x00000000
+  eip  0x00101d15
+  cs   0x----001b
+  flag 0x00000246
+  esp  0x0010c24c
+  ss   0x----0023
+recover from trap 3
+Unhandled interrupt occured on cpu 0: the trapno is 4!
+TRAP frame at 0x108fb4
+  edi  0x0008585a
+  esi  0x56438e00
+  ebp  0x0010c294
+  ebx  0x00083f3e
+  edx  0x0010c26c
+  ecx  0x0010f2d0
+  eax  0xe0000000
+  es   0x----0023
+  ds   0x----0023
+  trap 0x00000004 Overflow
+  err  0x00000000
+  eip  0x00101d50
+  cs   0x----001b
+  flag 0x00000a86
+  esp  0x0010c24c
+  ss   0x----0023
+recover from trap 4
+Unhandled interrupt occured on cpu 0: the trapno is 5!
+TRAP frame at 0x108fb4
+  edi  0x0008585a
+  esi  0x56438e00
+  ebp  0x0010c294
+  ebx  0x00083f3e
+  edx  0x0010c26c
+  ecx  0x0010f2d0
+  eax  0x00000000
+  es   0x----0023
+  ds   0x----0023
+  trap 0x00000005 BOUND Range Exceeded
+  err  0x00000000
+  eip  0x00101d96
+  cs   0x----001b
+  flag 0x00000246
+  esp  0x0010c24c
+  ss   0x----0023
+recover from trap 5
+Unhandled interrupt occured on cpu 0: the trapno is 6!
+TRAP frame at 0x108fb4
+  edi  0x0008585a
+  esi  0x56438e00
+  ebp  0x0010c294
+  ebx  0x00083f3e
+  edx  0x0010c26c
+  ecx  0x0010f2d0
+  eax  0x00000005
+  es   0x----0023
+  ds   0x----0023
+  trap 0x00000006 Invalid Opcode
+  err  0x00000000
+  eip  0x00101dcc
+  cs   0x----001b
+  flag 0x00000246
+  esp  0x0010c24c
+  ss   0x----0023
+recover from trap 6
+Unhandled interrupt occured on cpu 0: the trapno is 13!
+TRAP frame at 0x108fb4
+  edi  0x0008585a
+  esi  0x56438e00
+  ebp  0x0010c294
+  ebx  0x00083f3e
+  edx  0x0010c26c
+  ecx  0x0010f2d0
+  eax  0xffffffff
+  es   0x----0023
+  ds   0x----0023
+  trap 0x0000000d General Protection
+  err  0x0000fffc
+  eip  0x00101e06
+  cs   0x----001b
+  flag 0x00000246
+  esp  0x0010c24c
+  ss   0x----0023
+recover from trap 13
+Unhandled interrupt occured on cpu 0: the trapno is 13!
+TRAP frame at 0x108fb4
+  edi  0x0008585a
+  esi  0x56438e00
+  ebp  0x0010c294
+  ebx  0x0008001b
+  edx  0x0010c26c
+  ecx  0x0010f2d0
+  eax  0x00000003
+  es   0x----0023
+  ds   0x----0023
+  trap 0x0000000d General Protection
+  err  0x00000000
+  eip  0x00101e50
+  cs   0x----001b
+  flag 0x00000206
+  esp  0x0010c24c
+  ss   0x----0023
+recover from trap 13
+proc_check() trap reflection test succeeded
+proc_check() succeeded!

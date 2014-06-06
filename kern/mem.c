@@ -128,7 +128,8 @@ mem_init(void)
 	//panic("mem_init() not implemented");
 
 	// Check to make sure the page allocator seems to work correctly.
-	mem_check();
+	//mem_check();
+	
 }
 
 //
@@ -145,8 +146,6 @@ mem_init(void)
 pageinfo *
 mem_alloc(void)
 {
-	// Fill this function in
-	// Fill this function in.
 	//panic("mem_alloc not implemented.");
 	if(!spinlock_holding(&_freelist_lock));
 	spinlock_acquire(&_freelist_lock);

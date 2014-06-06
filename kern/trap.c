@@ -43,12 +43,13 @@ trap_init_idt(void)
 	//panic("trap_init() not implemented.");
 
 	int i;
-	for (i=0; i<256; i++) {
+	for (i=0; i<501; i++) {
 		SETGATE(idt[i], 0, CPU_GDT_KCODE, vectors[i], 0); //CPU_GDT_KCODE is 0x08
 	}
-	SETGATE(idt[3], 0, CPU_GDT_KCODE, vectors[3], 3); //T_BRKPT
-	SETGATE(idt[4], 0, CPU_GDT_KCODE, vectors[4], 3); //T_OFLOW
-
+	SETGATE(idt[T_BRKPT], 0, CPU_GDT_KCODE, vectors[3], 3); //T_BRKPT
+	SETGATE(idt[T_OFLOW], 0, CPU_GDT_KCODE, vectors[4], 3); //T_OFLOW
+	SETGATE(idt[T_SYSCALL], 0, CPU_GDT_KCODE, vectors[48], 3); //T_SYSCALL 
+	
 }
 
 void
@@ -137,6 +138,8 @@ trap(trapframe *tf)
 	// and some versions of GCC rely on DF being clear.
 	asm volatile("cld" ::: "cc");
 
+       	cli();//the interrupt must be close until trap_return 
+
 	// If this trap was anticipated, just use the designated handler.
 	cpu *c = cpu_cur();
 	if (c->recover)
@@ -145,46 +148,36 @@ trap(trapframe *tf)
 	// Lab 2: your trap handling code here!
 	switch (tf->trapno) {
   		case T_SYSCALL:
-    		assert(tf->cs & 3);
-    		syscall(tf);
-    		break;
-	  	case T_DIVIDE:
-	  	case T_DEBUG:
-	  	case T_BRKPT:
-	  	case T_OFLOW:
-	  	case T_NMI:
-	  	case T_BOUND:
-	  	case T_ILLOP:
-	  	case T_DEVICE:
-	  	case T_DBLFLT:
-	  	case T_TSS:
-	  	case T_SEGNP:
-	  	case T_STACK:
-	  	case T_GPFLT:
-	  	case T_PGFLT:
-	  	case T_FPERR:
-	  	case T_ALIGN:
-	  	case T_MCHK:
-	  	case T_SIMD:
+		  //syscalls only come from user space
+		  assert(tf->cs & 3);
+		  syscall(tf);
+		  break;
 	  	case T_SECEV:
-	  		cprintf("the trapno is %x",tf->trapno);
-	    	assert(tf->cs & 3);
-	    	proc_ret(tf, 1);
-	    	break;
+		  cprintf("T_SECEV interrupt occured on CPU %d\n",cpu_cur()->id);
+		  assert(tf->cs & 3);
+		  proc_ret(tf, -1);
+		  break;
 	  	case T_LTIMER:
-	    	lapic_eoi();
-	    	if (tf->cs & 3)
-	      	proc_yield(tf);
-		    trap_return(tf);
-	    	break;
+		  lapic_eoi();
+		  if (tf->cs & 3)
+		    proc_yield(tf);
+		  trap_return(tf);
+		  break;
 	  	case T_LERROR:
-	    	lapic_errintr();
-	    	trap_return(tf);
+		  cprintf("T_LERROR interrupt occured on CPU %d\n", cpu_cur()->id);
+		  lapic_errintr();
+		  trap_return(tf);
 	  	case T_IRQ0 + IRQ_SPURIOUS:
-	    	cprintf("cpu%d: spurious interrupt at %x:%x\n",
-	        c->id, tf->cs, tf->eip);
-	    	trap_return(tf); // Note: no EOI (see Local APIC manual)
-	    	break;
+		  cprintf("cpu%d: spurious interrupt at %x:%x\n",
+			  c->id, tf->cs, tf->eip);
+		  trap_return(tf); // Note: no EOI (see Local APIC manual)
+		  break;
+	        default:
+		  cprintf("Unhandled interrupt occured on cpu %d: the trapno is %d!\n", 
+		  cpu_cur()->id, tf->trapno);
+		  trap_print(tf);
+		  proc_ret(tf, -1);
+	      
 	}    	
 	
 	// If we panic while holding the console lock,
@@ -194,6 +187,7 @@ trap(trapframe *tf)
 	trap_print(tf);
 	panic("unhandled trap");
 }
+
 
 
 // Helper function for trap_check_recover(), below:
@@ -306,4 +300,18 @@ trap_check(void **argsp)
 
 	*argsp = NULL;	// recovery mechanism not needed anymore
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -34,10 +34,10 @@ spinlock_acquire(struct spinlock *lk)
 {
 	if(spinlock_holding(lk))
         panic("Already holding lock.");
-    while(xchg(&(lk->locked), 1) != 0)
-        pause();
-    lk->cpu = cpu_cur();
-    debug_trace(read_ebp(), lk->eips);
+	while(xchg(&(lk->locked), 1) != 0)
+	  pause();
+	lk->cpu = cpu_cur();
+	debug_trace(read_ebp(), lk->eips);
 }
 
 // Release the lock.
@@ -46,16 +46,15 @@ spinlock_release(struct spinlock *lk)
 {
 	if(!spinlock_holding(lk))
         panic("Not holding lock");
-    lk->cpu = 0;
-    lk->eips[0] = 0;
-    xchg(&(lk->locked), 0);
+	lk->cpu = 0;
+	lk->eips[0] = 0;
+	xchg(&(lk->locked), 0);
 }
 
 // Check whether this cpu is holding the lock.
 int
 spinlock_holding(spinlock *lock)
 {
-	//panic("spinlock_holding() not implemented");
 	return (lock->locked) && (lock->cpu == cpu_cur());
 }
 

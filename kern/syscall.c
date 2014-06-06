@@ -33,7 +33,9 @@
 static void gcc_noreturn
 systrap(trapframe *utf, int trapno, int err)
 {
-	panic("systrap() not implemented.");
+       utf->trapno = trapno;
+       utf->err = err;
+       proc_ret(utf, 0);
 }
 
 // Recover from a trap that occurs during a copyin or copyout,
@@ -49,7 +51,11 @@ systrap(trapframe *utf, int trapno, int err)
 static void gcc_noreturn
 sysrecover(trapframe *ktf, void *recoverdata)
 {
-	panic("sysrecover() not implemented.");
+  trapframe *utf = (trapframe*)recoverdata;
+  cpu *c = cpu_cur();
+  assert(c->recover == sysrecover);
+  c->recover = NULL;
+  systrap(utf, ktf->trapno, ktf->err);
 }
 
 // Check a user virtual address block for validity:
@@ -63,7 +69,7 @@ sysrecover(trapframe *ktf, void *recoverdata)
 //
 static void checkva(trapframe *utf, uint32_t uva, size_t size)
 {
-	panic("checkva() not implemented.");
+        panic("checkva() not implemented.");
 }
 
 // Copy data to/from user space,
@@ -72,9 +78,6 @@ static void checkva(trapframe *utf, uint32_t uva, size_t size)
 void usercopy(trapframe *utf, bool copyout,
 			void *kva, uint32_t uva, size_t size)
 {
-	checkva(utf, uva, size);
-
-	// Now do the copy, but recover from page faults.
 	panic("syscall_usercopy() not implemented.");
 }
 
@@ -83,13 +86,93 @@ do_cputs(trapframe *tf, uint32_t cmd)
 {
 	// Print the string supplied by the user: pointer in EBX
 	cprintf("%s", (char*)tf->regs.ebx);
-
 	trap_return(tf);	// syscall completed
 }
 
 // Common function to handle all system calls -
 // decode the system call type and call an appropriate handler function.
 // Be sure to handle undefined system calls appropriately.
+
+static void
+do_put(trapframe *tf, uint32_t cmd)
+{
+  //need to rethink setting lock
+  proc *curr = proc_cur();
+  procstate *cstate = (procstate*)tf->regs.ebx;//"b"(save)
+  spinlock_acquire(&curr->lock);
+  uint32_t child_index = tf->regs.edx;
+  //"d"(child)
+  //EDX: bits 7-0:Child proess number to get/put
+  uint8_t cn = child_index & 0xff;//the last 8 bits for child number
+  proc *child = curr->child[cn];
+  spinlock_release(&curr->lock);
+  //shall the child->lock be catch, before accessing the child ?
+  if(!child){
+    child = proc_alloc(curr, cn);
+  }
+  if(child->state != PROC_STOP){
+    proc_wait(curr, child, tf);
+  }
+  
+
+  //if the child is not in the stopped state,
+  //the kernel puts the parent process to sleep waiting for the child to stop
+  //the parents goes into the PROC_WAIT state and sits there
+  //until the child enters the PROC_STOP,
+  //at which point the parent wakes up and restarts its PUT system call .
+  
+  if(cmd & SYS_REGS){//#define SYS_REGS 0x00001000
+    memmove(&(child->sv.tf.regs), &(cstate->tf.regs), sizeof(pushregs));
+    child->sv.tf.ds = CPU_GDT_UDATA | 3;
+    child->sv.tf.es = CPU_GDT_UDATA | 3;
+    child->sv.tf.cs = CPU_GDT_UCODE | 3;
+    child->sv.tf.ss = CPU_GDT_UDATA | 3;
+    child->sv.tf.eip =  cstate->tf.eip;
+    child->sv.tf.esp =  cstate->tf.esp;
+    child->sv.tf.eflags &= FL_USER;
+    child->sv.tf.eflags |= FL_IF;
+  }
+  if(cmd & SYS_START)
+    proc_ready(child);
+  trap_return(tf);
+}
+
+static void 
+do_get(trapframe *tf, uint32_t cmd)
+{
+  //need to rethink setting lock
+  proc *curr = proc_cur();
+  procstate *cstate = (procstate*)tf->regs.ebx;
+  spinlock_acquire(&curr->lock);
+  int child_index = tf->regs.edx;
+  uint32_t cn = child_index & 0xff;
+  proc *child = curr->child[cn];
+  spinlock_release(&curr->lock);
+  assert(child != NULL);
+  if(child->state != PROC_STOP){
+    proc_wait(curr, child, tf);
+  }
+  if(cmd & SYS_REGS)
+    memmove(&(cstate->tf), &(child->sv.tf),sizeof(trapframe));
+  trap_return(tf);
+}
+
+static void
+do_ret(trapframe *tf)
+{
+  proc_ret(tf, 1);
+}
+
+// the convention in inc/syscall.h
+// Register conventions on GET/PUT system call entry:
+//	EAX:	System call command/flags (SYS_*)
+//	EDX:	bits 7-0: Child process number to get/put
+//	EBX:	Get/put CPU state pointer for SYS_REGS and/or SYS_FPU)
+//	ECX:	Get/put memory region size
+//	ESI:	Get/put local memory region start
+//	EDI:	Get/put child memory region start
+//	EBP:	reserved
+
 void
 syscall(trapframe *tf)
 {
@@ -98,6 +181,12 @@ syscall(trapframe *tf)
 	switch (cmd & SYS_TYPE) {
 	case SYS_CPUTS:	return do_cputs(tf, cmd);
 	// Your implementations of SYS_PUT, SYS_GET, SYS_RET here...
+	case SYS_PUT: 
+	  return do_put(tf, cmd);
+	case SYS_GET:
+	  return do_get(tf, cmd);
+	case SYS_RET:
+	  return do_ret(tf);
 	default:	return;		// handle as a regular trap
 	}
 }
